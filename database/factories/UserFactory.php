@@ -29,8 +29,9 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'role' => 'user', // Added default role
-            'language_preference' => 'en', // Added default language_preference
+            'role' => 'user', // Existing default role
+            'language_preference' => 'en', // Existing default language_preference
+            'rank' => null, // Added rank with default null
         ];
     }
 

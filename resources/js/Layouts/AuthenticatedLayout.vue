@@ -39,6 +39,19 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     Dashboard
                                 </NavLink>
+                                <!-- Admin Links -->
+                                <NavLink
+                                    :href="route('admin.cities.index')"
+                                    :active="route().current().startsWith('admin.cities')"
+                                >
+                                    Ciudades
+                                </NavLink>
+                                <NavLink
+                                    :href="route('admin.building-types.index')"
+                                    :active="route().current().startsWith('admin.building-types')"
+                                >
+                                    Tipos de Edificio
+                                </NavLink>
                             </div>
                         </div>
 
@@ -145,6 +158,19 @@ const showingNavigationDropdown = ref(false);
                             :active="route().current('dashboard')"
                         >
                             Dashboard
+                        </ResponsiveNavLink>
+                        <!-- Admin Responsive Links -->
+                        <ResponsiveNavLink
+                            :href="route('admin.cities.index')"
+                            :active="route().current().startsWith('admin.cities')"
+                        >
+                            Ciudades
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="route('admin.building-types.index')"
+                            :active="route().current().startsWith('admin.building-types')"
+                        >
+                            Tipos de Edificio
                         </ResponsiveNavLink>
                     </div>
 

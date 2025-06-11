@@ -31,12 +31,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Admin grouped routes
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::resource('cities', CityController::class);
+        Route::resource('building-types', BuildingTypeController::class);
+        // Future admin routes can be added here
+    });
 });
 
-// Resource routes for the new controllers
-Route::resource('cities', CityController::class);
+// Other resource routes (not part of this admin group for now)
 Route::resource('maps', MapController::class);
-Route::resource('building-types', BuildingTypeController::class);
 Route::resource('map-plots', MapPlotController::class);
 Route::resource('owners', OwnerController::class);
 Route::resource('shop-contracts', ShopContractController::class);
