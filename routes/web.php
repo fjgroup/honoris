@@ -47,6 +47,12 @@ Route::middleware('auth')->group(function () {
     // User-accessible resource routes that require authentication but not admin prefix
     Route::resource('shop-requests', ShopRequestController::class);
     // Route::resource('shop-contracts', ShopContractController::class); // Commented out as it's now admin only
+
+    // API-like routes for authenticated users (e.g., fetching data for Vue components)
+    Route::get('/api/maps/{map}/active-contracts', [\App\Http\Controllers\ShopContractController::class, 'getActiveContractsForMap'])->name('api.maps.active-contracts');
+
+    // User-facing map viewer page
+    Route::get('/view-shops-map', function () { return \Inertia\Inertia::render('User/Maps/ViewMap'); })->name('user.view-shops-map');
 });
 
 // Other resource routes (public or different middleware)

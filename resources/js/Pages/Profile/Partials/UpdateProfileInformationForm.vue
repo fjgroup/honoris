@@ -19,6 +19,7 @@ const user = usePage().props.auth.user;
 const form = useForm({
     name: user.name,
     email: user.email,
+    language_preference: user.language_preference, // Add this line
 });
 </script>
 
@@ -67,6 +68,22 @@ const form = useForm({
                 />
 
                 <InputError class="mt-2" :message="form.errors.email" />
+            </div>
+
+            <div>
+                <InputLabel for="language_preference" value="Idioma de Preferencia (Language Preference)" />
+
+                <select
+                    id="language_preference"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    v-model="form.language_preference"
+                    required
+                >
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                </select>
+
+                <InputError class="mt-2" :message="form.errors.language_preference" />
             </div>
 
             <div v-if="mustVerifyEmail && user.email_verified_at === null">
