@@ -5,6 +5,15 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+// Import the new controllers
+use App\Http\Controllers\CityController;
+use App\Http\Controllers\MapController;
+use App\Http\Controllers\BuildingTypeController;
+use App\Http\Controllers\MapPlotController;
+use App\Http\Controllers\OwnerController;
+use App\Http\Controllers\ShopContractController;
+use App\Http\Controllers\ShopRequestController;
+
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -23,5 +32,14 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+// Resource routes for the new controllers
+Route::resource('cities', CityController::class);
+Route::resource('maps', MapController::class);
+Route::resource('building-types', BuildingTypeController::class);
+Route::resource('map-plots', MapPlotController::class);
+Route::resource('owners', OwnerController::class);
+Route::resource('shop-contracts', ShopContractController::class);
+Route::resource('shop-requests', ShopRequestController::class);
 
 require __DIR__.'/auth.php';
