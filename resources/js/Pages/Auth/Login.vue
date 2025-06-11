@@ -39,19 +39,19 @@ const submit = () => {
 
         <form @submit.prevent="submit">
             <div>
-                <InputLabel for="name" value="Nombre de Usuario" /> {/* Changed label and for attribute */}
+                <InputLabel for="name" value="Nombre de Usuario" />
 
                 <TextInput
-                    id="name" // Changed id
-                    type="text" // Changed type
+                    id="name"
+                    type="text"
                     class="mt-1 block w-full"
-                    v-model="form.name" // Changed v-model
+                    v-model="form.name"
                     required
                     autofocus
                     autocomplete="username"
                 />
 
-                <InputError class="mt-2" :message="form.errors.name" /> {/* Changed error message binding */}
+                <InputError class="mt-2" :message="form.errors.name" />
             </div>
 
             <div class="mt-4">
