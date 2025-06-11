@@ -6,6 +6,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Owner;
+use App\Models\ShopContract;
+use App\Models\ShopRequest;
 
 class User extends Authenticatable
 {
@@ -21,6 +24,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'language_preference',
     ];
 
     /**
@@ -44,5 +49,29 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the owner associated with the user.
+     */
+    public function owner()
+    {
+        return $this->hasOne(Owner::class);
+    }
+
+    /**
+     * Get the shop contracts updated by the user.
+     */
+    public function shopContractsUpdated()
+    {
+        return $this->hasMany(ShopContract::class, 'last_updated_by');
+    }
+
+    /**
+     * Get the shop requests for the user.
+     */
+    public function shopRequests()
+    {
+        return $this->hasMany(ShopRequest::class);
     }
 }
