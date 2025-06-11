@@ -26,6 +26,7 @@ class User extends Authenticatable
         'password',
         'role',
         'language_preference',
+        'rank', // Added rank
     ];
 
     /**
