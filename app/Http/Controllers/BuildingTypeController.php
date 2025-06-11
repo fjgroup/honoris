@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateBuildingTypeRequest;
 use App\Models\BuildingType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -43,7 +44,14 @@ class BuildingTypeController extends Controller
     {
         $this->authorize('create', BuildingType::class);
 
-        BuildingType::create($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('icon_path')) {
+            $path = $request->file('icon_path')->store('public/building_icons');
+            $data['icon_path'] = Storage::url($path);
+        }
+
+        BuildingType::create($data);
 
         return Redirect::route('admin.building-types.index')->with('success', 'Building type created successfully.');
     }
@@ -79,7 +87,19 @@ class BuildingTypeController extends Controller
     {
         $this->authorize('update', $buildingType);
 
-        $buildingType->update($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('icon_path')) {
+            if ($buildingType->icon_path) {
+                // Extract path relative to storage/app from the URL for deletion
+                $oldPath = str_replace('/storage/', 'public/', $buildingType->icon_path);
+                Storage::delete($oldPath);
+            }
+            $path = $request->file('icon_path')->store('public/building_icons');
+            $data['icon_path'] = Storage::url($path);
+        }
+
+        $buildingType->update($data);
 
         return Redirect::route('admin.building-types.index')->with('success', 'Building type updated successfully.');
     }

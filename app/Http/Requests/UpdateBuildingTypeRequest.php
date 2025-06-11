@@ -30,7 +30,7 @@ class UpdateBuildingTypeRequest extends FormRequest
                 Rule::unique('building_types', 'name')->ignore($this->route('building_type')), // Assumes route parameter is 'building_type'
             ],
             'description' => 'nullable|string',
-            'icon_path' => 'nullable|string|max:255',
+            'icon_path' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
     }
 }

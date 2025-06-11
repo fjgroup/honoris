@@ -36,14 +36,14 @@ Route::middleware('auth')->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('cities', CityController::class);
         Route::resource('building-types', BuildingTypeController::class);
+        Route::resource('maps', MapController::class);
+        Route::resource('owners', OwnerController::class);
         // Future admin routes can be added here
     });
 });
 
 // Other resource routes (not part of this admin group for now)
-Route::resource('maps', MapController::class);
 Route::resource('map-plots', MapPlotController::class);
-Route::resource('owners', OwnerController::class);
 Route::resource('shop-contracts', ShopContractController::class);
 Route::resource('shop-requests', ShopRequestController::class);
 
