@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Models\User; // Added User model import
 
 class LoginRequest extends FormRequest
 {
@@ -41,12 +42,19 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        // Changed 'email' to 'name' in attempt credentials
-        if (! Auth::attempt($this->only('name', 'password'), $this->boolean('remember'))) {
+        // Get the provided name (case-insensitive for lookup)
+        $providedName = $this->input('name');
+
+        // Find the user by name, case-insensitive.
+        $user = User::whereRaw('LOWER(name) = ?', [strtolower($providedName)])->first();
+
+        // If a user is found, attempt to authenticate with their actual cased name and the provided password.
+        // If no user is found, or if Auth::attempt fails, then it's an authentication failure.
+        if (! $user || ! Auth::attempt(['name' => $user->name, 'password' => $this->input('password')], $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'name' => trans('auth.failed'), // Changed error key to name
+                'name' => trans('auth.failed'),
             ]);
         }
 

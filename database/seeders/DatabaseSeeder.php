@@ -10,6 +10,7 @@ use Illuminate\Database\Seeder;
 use Database\Seeders\CitySeeder;
 use Database\Seeders\BuildingTypeSeeder;
 use Database\Seeders\UserSeeder; // Added UserSeeder import
+use Database\Seeders\MapSeeder; // Add this
 
 class DatabaseSeeder extends Seeder
 {
@@ -29,6 +30,7 @@ class DatabaseSeeder extends Seeder
             CitySeeder::class,
             BuildingTypeSeeder::class,
             UserSeeder::class, // Added UserSeeder to the call array
+            MapSeeder::class, // Add this line
         ]);
     }
 }

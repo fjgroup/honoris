@@ -8,6 +8,7 @@ use App\Models\Owner;
 use App\Models\BuildingType;
 use App\Models\User;
 use App\Models\ShopRequest;
+use App\Models\Map; // Added for type hinting
 use App\Http\Requests\StoreShopContractRequest;
 use App\Http\Requests\UpdateShopContractRequest;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +16,7 @@ use Illuminate\Http\Request; // For query params in create method
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse; // Added for API response
 
 class ShopContractController extends Controller
 {
@@ -205,5 +207,46 @@ class ShopContractController extends Controller
         }
 
         return redirect()->route('admin.shop-contracts.index')->with('success', 'Shop contract deleted successfully.');
+    }
+
+    /**
+     * Get active contracts for a specific map, filtered by user visibility.
+     */
+    public function getActiveContractsForMap(Map $map): JsonResponse
+    {
+        // Policy check: Ensure user can at least view some contracts or map data.
+        // Using 'viewAny' on ShopContract, but a more specific policy could be 'viewActiveContractsOnMap'.
+        $this->authorize('viewAny', ShopContract::class);
+
+        $userId = Auth::id();
+
+        $contracts = ShopContract::where('map_id', $map->id)
+            ->where('status', 'active') // Only active contracts
+            ->with([
+                // Eager load only necessary fields for display on the map
+                'mapPlot:id,map_id,plot_identifier,coord_x,coord_y,width,height',
+                'buildingType:id,name,icon_path',
+                'owner:id,name,language_preference,is_for_all_users', // Include name for potential display
+                // 'assignedToUser:id,name' // If needed to show who it's assigned to specifically on hover
+            ])
+            ->get()
+            ->filter(function ($contract) use ($userId) {
+                // Filter for visibility:
+                // 1. If the contract's owner has 'is_for_all_users' set to true.
+                // 2. OR if the contract is specifically assigned to the current viewing user.
+                if ($contract->owner && $contract->owner->is_for_all_users) {
+                    return true;
+                }
+                // Also include if the user themselves is the owner, even if not 'is_for_all_users'
+                // This depends on how `owner_id` on ShopContract relates to `User` model.
+                // Assuming Owner model has a user_id field for the owner.
+                if ($contract->owner && $contract->owner->user_id === $userId) {
+                    return true;
+                }
+
+                return $contract->assigned_to_user_id === $userId;
+            });
+
+        return response()->json($contracts->values()); // values() to re-index array after filter
     }
 }
