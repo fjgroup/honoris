@@ -36,15 +36,20 @@ Route::middleware('auth')->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('cities', CityController::class);
         Route::resource('building-types', BuildingTypeController::class);
+        Route::resource('maps', MapController::class);
+        Route::resource('owners', OwnerController::class);
+        Route::resource('map-plots', MapPlotController::class);
+        Route::get('/map-plot-editor', function () { return Inertia::render('Admin/Maps/InteractiveMapPlotEditor'); })->name('map-plot-editor.index');
+        Route::resource('shop-contracts', ShopContractController::class); // Added to admin group
         // Future admin routes can be added here
     });
+
+    // User-accessible resource routes that require authentication but not admin prefix
+    Route::resource('shop-requests', ShopRequestController::class);
+    // Route::resource('shop-contracts', ShopContractController::class); // Commented out as it's now admin only
 });
 
-// Other resource routes (not part of this admin group for now)
-Route::resource('maps', MapController::class);
-Route::resource('map-plots', MapPlotController::class);
-Route::resource('owners', OwnerController::class);
-Route::resource('shop-contracts', ShopContractController::class);
-Route::resource('shop-requests', ShopRequestController::class);
+// Other resource routes (public or different middleware)
+// Route::resource('shop-contracts', ShopContractController::class); // Removed from here
 
 require __DIR__.'/auth.php';

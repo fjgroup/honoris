@@ -4,14 +4,14 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreBuildingTypeRequest extends FormRequest
+class StoreShopRequestRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true; // Authorization handled by Policies
+        return true; // Policy will handle specific user rights
     }
 
     /**
@@ -22,9 +22,9 @@ class StoreBuildingTypeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255|unique:building_types,name',
-            'description' => 'nullable|string',
-            'icon_path' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'city_id' => 'required|exists:cities,id',
+            'building_type_id' => 'required|exists:building_types,id',
+            'notes' => 'nullable|string|max:1000',
         ];
     }
 }

@@ -3,8 +3,9 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\User; // Import User model
 
-class StoreBuildingTypeRequest extends FormRequest
+class StoreOwnerRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,9 +23,12 @@ class StoreBuildingTypeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255|unique:building_types,name',
+            'user_id' => 'required|exists:users,id|unique:owners,user_id',
+            'name' => 'required|string|max:255',
+            'contact_info' => 'nullable|string|max:255',
+            'language_preference' => 'required|in:en,es',
+            'is_for_all_users' => 'required|boolean',
             'description' => 'nullable|string',
-            'icon_path' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
     }
 }

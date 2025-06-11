@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreBuildingTypeRequest extends FormRequest
+class StoreMapPlotRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,9 +22,14 @@ class StoreBuildingTypeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255|unique:building_types,name',
-            'description' => 'nullable|string',
-            'icon_path' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'map_id' => 'required|exists:maps,id',
+            'plot_identifier' => 'required|string|max:255',
+            'coord_x' => 'required|integer|min:0',
+            'coord_y' => 'required|integer|min:0',
+            'width' => 'required|integer|min:1',
+            'height' => 'required|integer|min:1',
+            'is_active' => 'sometimes|boolean', // Default will be handled in controller
+            'notes' => 'nullable|string',
         ];
     }
 }
