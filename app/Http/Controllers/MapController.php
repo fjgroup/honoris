@@ -11,15 +11,28 @@ use Inertia\Inertia;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Response as InertiaResponse; // Alias to avoid conflict if Response facade is used directly
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Http\Request; // Added
+use Illuminate\Http\JsonResponse; // Added
 
 class MapController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(): InertiaResponse
+    public function index(Request $request): InertiaResponse|JsonResponse // Modified
     {
         $this->authorize('viewAny', Map::class);
+
+        if ($request->has('city_id')) {
+            $cityId = $request->query('city_id');
+            // Return only 'id' and 'name' for dropdowns, include 'image_path' if needed for previews
+            $maps = Map::where('city_id', $cityId)
+                       ->orderBy('name')
+                       ->select('id', 'name', 'image_path') // Select specific fields
+                       ->get();
+            return response()->json($maps);
+        }
+
         $maps = Map::with('city')->orderBy('name')->paginate(10);
         return Inertia::render('Admin/Maps/Index', ['maps' => $maps]);
     }
@@ -52,11 +65,14 @@ class MapController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Map $map): InertiaResponse
+    public function show(Map $map): JsonResponse // Modified
     {
         $this->authorize('view', $map);
-        $map->load('city'); // Ensure city is loaded
-        return Inertia::render('Admin/Maps/Show', ['map' => $map]);
+        $map->load('city:id,name'); // Load only specific columns from city for efficiency
+        // Ensure image_path is absolute if it's stored as relative
+        // This is usually handled by an accessor in the Map model (getImagePathAttribute)
+        // or by ensuring Storage::url() was used to save it.
+        return response()->json($map);
     }
 
     /**

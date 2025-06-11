@@ -9,15 +9,22 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use Illuminate\Http\Request; // Added
+use Illuminate\Http\JsonResponse; // Added
 
 class CityController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(): InertiaResponse
+    public function index(Request $request): InertiaResponse|JsonResponse // Modified return type
     {
         $this->authorize('viewAny', City::class);
+
+        if ($request->query('all') === 'true') {
+            $cities = City::orderBy('name')->get();
+            return response()->json($cities);
+        }
 
         $cities = City::orderBy('name')->paginate(10);
 

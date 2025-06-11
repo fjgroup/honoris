@@ -14,6 +14,7 @@ class ShopRequestPolicy
     public function viewAny(User $user): bool
     {
         return $user->role === 'admin' || $user->role === 'captain';
+        // User-specific list will be handled by controller logic filtering by user_id
     }
 
     /**
@@ -21,7 +22,7 @@ class ShopRequestPolicy
      */
     public function view(User $user, ShopRequest $shopRequest): bool
     {
-        return $user->role === 'admin' || $user->role === 'captain';
+        return ($user->role === 'admin' || $user->role === 'captain') || $user->id === $shopRequest->user_id;
     }
 
     /**
@@ -29,7 +30,7 @@ class ShopRequestPolicy
      */
     public function create(User $user): bool
     {
-        return $user->role === 'admin' || $user->role === 'captain';
+        return true; // Any authenticated user can create a request
     }
 
     /**
@@ -37,7 +38,7 @@ class ShopRequestPolicy
      */
     public function update(User $user, ShopRequest $shopRequest): bool
     {
-        return $user->role === 'admin' || $user->role === 'captain';
+        return $user->role === 'admin' || $user->role === 'captain'; // Only admins/captains can update (e.g. status)
     }
 
     /**
@@ -45,7 +46,7 @@ class ShopRequestPolicy
      */
     public function delete(User $user, ShopRequest $shopRequest): bool
     {
-        return $user->role === 'admin' || $user->role === 'captain';
+        return ($user->role === 'admin' || $user->role === 'captain') || ($user->id === $shopRequest->user_id && $shopRequest->status === 'pending'); // User can delete their own if still pending
     }
 
     /**
