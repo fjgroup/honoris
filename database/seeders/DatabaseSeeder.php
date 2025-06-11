@@ -9,6 +9,7 @@ use Illuminate\Database\Seeder;
 // Import the new seeders
 use Database\Seeders\CitySeeder;
 use Database\Seeders\BuildingTypeSeeder;
+use Database\Seeders\UserSeeder; // Added UserSeeder import
 
 class DatabaseSeeder extends Seeder
 {
@@ -19,14 +20,15 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // User::factory()->create([
+        //     'name' => 'Test User',
+        //     'email' => 'test@example.com',
+        // ]); // Commented out Test User factory
 
         $this->call([
             CitySeeder::class,
             BuildingTypeSeeder::class,
+            UserSeeder::class, // Added UserSeeder to the call array
         ]);
     }
 }
