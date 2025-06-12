@@ -244,24 +244,20 @@ const deletePlot = () => {
     if (!editingPlot.value) return;
 
     const deleteUrl = route('admin.map-plots.destroy', editingPlot.value.id);
-    console.log('Generated DELETE URL for axios.delete:', deleteUrl);
+    // You can update this log or remove it if no longer needed for this specific debug step
+    console.log('Generated DELETE URL for form.delete:', deleteUrl);
 
-    axios.delete(deleteUrl)
-        .then(response => {
-            console.log('Delete successful via axios:', response);
-            fetchMapDetailsAndPlots();
+    editPlotFormData.delete(deleteUrl, {
+        preserveScroll: true,
+        onSuccess: () => {
+            // fetchMapDetailsAndPlots(); // Temporarily removed
             cancelEditPlot();
-            // Consider if a router.reload() or similar Inertia refresh is needed here
-            // if fetchMapDetailsAndPlots() isn't enough to update everything perfectly.
-        })
-        .catch(error => {
-            console.error('Error deleting plot via axios.delete:', error.response || error);
-            alert('Could not delete plot. Check console for details (axios).');
-            if (error.response && error.response.status === 405) {
-                // Log more details if it's still a 405
-                alert('AXIOS_STILL_405: URL sent: ' + deleteUrl + '. Actual URL from error config: ' + (error.config ? error.config.url : 'N/A'));
-            }
-        });
+        },
+        onError: (errors) => {
+            console.error('Error deleting plot with form.delete:', errors);
+            alert('Could not delete plot. Check console for details.');
+        },
+    });
 };
 const cancelEditPlot = () => { /* ... same ... */
     showEditPlotModal.value = false; editingPlot.value = null; editPlotFormData.reset();
