@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'; // Added onBeforeUnmount, watch, nextTick
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import axios from 'axios';
 
 // --- Reactive State ---
@@ -18,19 +18,20 @@ const isLoadingMaps = ref(false);
 const isLoadingMapDetails = ref(false);
 const isLoadingMapPlots = ref(false);
 
-// mapImageDimensions now stores both natural and display sizes.
-// width/height will be display size, naturalWidth/naturalHeight will be image's original size.
-const mapImageDimensions = ref({ width: 0, height: 0, naturalWidth: 0, naturalHeight: 0 });
-const mapImageContainerRef = ref(null);
-const mapImageRef = ref(null); // Ref for the <img> element itself
+const mapImageDimensions = ref({
+    width: 0, height: 0, // Displayed dimensions of the image
+    naturalWidth: 0, naturalHeight: 0 // Original dimensions of the image file
+});
+const mapDisplayRef = ref(null); // Ref for the div directly containing the image and plots
+const mapImageRef = ref(null);   // Ref for the <img> element itself
 
 // Add Plot Mode State
 const addModeActive = ref(false);
 const showAddPlotModal = ref(false);
-const newPlotPreviewCoords = ref({ x: null, y: null });
+const newPlotPreviewCoords = ref({ x: null, y: null }); // Click position on displayed image for marker
 const newPlotFormData = useForm({
-    map_id: null, plot_identifier: '', coord_x: null, coord_y: null,
-    width: 50, height: 50, notes: '', is_active: true,
+    map_id: null, plot_identifier: '', coord_x: null, coord_y: null, // These coords are natural image coords
+    width: 50, height: 50, notes: '', is_active: true, // these width/height are natural image dims
 });
 
 // Edit Plot Mode State
@@ -46,15 +47,15 @@ let resizeObserver = null;
 // --- Methods ---
 const updateDisplayDimensions = () => {
     if (mapImageRef.value) {
-        mapImageDimensions.value = {
-            ...mapImageDimensions.value, // Keep naturalWidth/Height
-            width: mapImageRef.value.offsetWidth,
-            height: mapImageRef.value.offsetHeight,
-        };
+        mapImageDimensions.value.width = mapImageRef.value.offsetWidth;
+        mapImageDimensions.value.height = mapImageRef.value.offsetHeight;
+    } else { // Image not loaded or not present
+        mapImageDimensions.value.width = 0;
+        mapImageDimensions.value.height = 0;
     }
 };
 
-const fetchCities = async () => {
+const fetchCities = async () => { /* ... same ... */
     isLoadingCities.value = true;
     try {
         const response = await axios.get(route('admin.cities.index', { all: 'true' }));
@@ -65,8 +66,7 @@ const fetchCities = async () => {
         isLoadingCities.value = false;
     }
 };
-
-const fetchMapsForCity = async () => {
+const fetchMapsForCity = async () => { /* ... same ... */
     if (!selectedCityId.value || selectedCityId.value === 'null') {
         mapsForCity.value = []; selectedMapId.value = null; selectedMap.value = null; selectedMapImageUrl.value = null; mapPlots.value = [];
         return;
@@ -82,8 +82,7 @@ const fetchMapsForCity = async () => {
         isLoadingMaps.value = false;
     }
 };
-
-const fetchMapDetailsAndPlots = async () => {
+const fetchMapDetailsAndPlots = async () => { /* ... same ... */
     if (!selectedMapId.value || selectedMapId.value === 'null') {
         selectedMap.value = null; selectedMapImageUrl.value = null; mapPlots.value = [];
         mapImageDimensions.value = { width: 0, height: 0, naturalWidth: 0, naturalHeight: 0 };
@@ -92,18 +91,14 @@ const fetchMapDetailsAndPlots = async () => {
     isLoadingMapDetails.value = true; isLoadingMapPlots.value = true;
     selectedMap.value = null; selectedMapImageUrl.value = null; mapPlots.value = [];
     mapImageDimensions.value = { width: 0, height: 0, naturalWidth: 0, naturalHeight: 0 };
-
     try {
         const mapDetailsResponse = await axios.get(route('admin.maps.details.api', selectedMapId.value));
         selectedMap.value = mapDetailsResponse.data;
         selectedMapImageUrl.value = mapDetailsResponse.data.image_path;
-        // Natural dimensions might come from mapDetailsResponse.data if stored, otherwise from @load
-        if (mapDetailsResponse.data.width && mapDetailsResponse.data.height) {
+        if (mapDetailsResponse.data.width && mapDetailsResponse.data.height) { // Assuming map model might store natural dims
              mapImageDimensions.value.naturalWidth = mapDetailsResponse.data.width;
              mapImageDimensions.value.naturalHeight = mapDetailsResponse.data.height;
         }
-
-
         const plotsResponse = await axios.get(route('admin.map-plots.index', { map_id: selectedMapId.value }));
         mapPlots.value = plotsResponse.data.map_plots.data;
     } catch (error) {
@@ -119,7 +114,7 @@ const onMapImageLoad = (event) => {
     mapImageDimensions.value.naturalWidth = img.naturalWidth;
     mapImageDimensions.value.naturalHeight = img.naturalHeight;
 
-    nextTick(updateDisplayDimensions); // Update display dimensions after image has loaded and rendered
+    nextTick(updateDisplayDimensions);
 
     if(addModeActive.value) {
         newPlotPreviewCoords.value = { x: null, y: null };
@@ -127,27 +122,50 @@ const onMapImageLoad = (event) => {
 };
 
 const getPlotStyle = (plot) => {
-    if (mapImageDimensions.value.naturalWidth > 0 && mapImageDimensions.value.naturalHeight > 0 &&
-        mapImageDimensions.value.width > 0 && mapImageDimensions.value.height > 0) {
+    const { naturalWidth, naturalHeight } = mapImageDimensions.value;
+    const { width: displayWidth, height: displayHeight } = mapImageDimensions.value;
 
-        const scaleX = mapImageDimensions.value.width / mapImageDimensions.value.naturalWidth;
-        const scaleY = mapImageDimensions.value.height / mapImageDimensions.value.naturalHeight;
-
-        if (isNaN(scaleX) || isNaN(scaleY) || !isFinite(scaleX) || !isFinite(scaleY)) {
-            return { display: 'none' };
-        }
-        return {
-            left: `${plot.coord_x * scaleX}px`, top: `${plot.coord_y * scaleY}px`,
-            width: `${plot.width * scaleX}px`, height: `${plot.height * scaleY}px`,
-        };
+    if (!naturalWidth || !naturalHeight || !displayWidth || !displayHeight) {
+        return { display: 'none' }; // Not ready if any dimension is zero
     }
-    // Fallback if dimensions are not ready (e.g. display based on raw coords if no scaling info)
+
+    const scaleX = displayWidth / naturalWidth;
+    const scaleY = displayHeight / naturalHeight;
+
+    if (isNaN(scaleX) || !isFinite(scaleX) || isNaN(scaleY) || !isFinite(scaleY)) {
+        return { display: 'none' }; // Avoid NaN in styles
+    }
     return {
-        left: `${plot.coord_x}px`, top: `${plot.coord_y}px`,
-        width: `${plot.width}px`, height: `${plot.height}px`,
-         display: 'none', // Or hide if scaling cannot be determined yet
+        left: `${plot.coord_x * scaleX}px`, top: `${plot.coord_y * scaleY}px`,
+        width: `${plot.width * scaleX}px`, height: `${plot.height * scaleY}px`,
+        position: 'absolute', // Explicitly set here
     };
 };
+
+const getNewPlotPreviewStyle = () => {
+    if (newPlotPreviewCoords.value.x === null || newPlotPreviewCoords.value.y === null ||
+        !mapImageDimensions.value.naturalWidth || !mapImageDimensions.value.naturalHeight ||
+        !mapImageDimensions.value.width || !mapImageDimensions.value.height) {
+        return { display: 'none' };
+    }
+
+    const scaleX = mapImageDimensions.value.width / mapImageDimensions.value.naturalWidth;
+    const scaleY = mapImageDimensions.value.height / mapImageDimensions.value.naturalHeight;
+
+    if (isNaN(scaleX) || !isFinite(scaleX) || isNaN(scaleY) || !isFinite(scaleY)) {
+         return { display: 'none' };
+    }
+
+    return {
+        left: `${newPlotPreviewCoords.value.x}px`, // Preview coords are already display-relative
+        top: `${newPlotPreviewCoords.value.y}px`,
+        width: `${newPlotFormData.width * scaleX}px`, // Scale default/form width
+        height: `${newPlotFormData.height * scaleY}px`, // Scale default/form height
+        position: 'absolute',
+        transform: 'translate(-50%, -50%)', // Center the preview on the click
+    };
+};
+
 
 const toggleAddMode = () => { /* ... same ... */
     addModeActive.value = !addModeActive.value;
@@ -159,22 +177,28 @@ const toggleAddMode = () => { /* ... same ... */
         cancelEditPlot();
     }
 };
-const handleMapClick = (event) => { /* ... same ... */
-    if (!addModeActive.value || !mapImageContainerRef.value || showEditPlotModal.value) return;
-    const rect = mapImageContainerRef.value.getBoundingClientRect();
+const handleMapClick = (event) => {
+    if (!addModeActive.value || !mapDisplayRef.value || showEditPlotModal.value) return; // Use mapDisplayRef
+    const rect = mapDisplayRef.value.getBoundingClientRect(); // Use mapDisplayRef
     const clickX_on_displayed_image = event.clientX - rect.left;
     const clickY_on_displayed_image = event.clientY - rect.top;
+
+    newPlotPreviewCoords.value = { x: clickX_on_displayed_image, y: clickY_on_displayed_image };
+
     let actualX = clickX_on_displayed_image;
     let actualY = clickY_on_displayed_image;
+
     if (mapImageDimensions.value.naturalWidth > 0 && mapImageDimensions.value.naturalHeight > 0 &&
+        mapImageDimensions.value.width > 0 && mapImageDimensions.value.height > 0 && // Ensure display dims also > 0
         (mapImageDimensions.value.width !== mapImageDimensions.value.naturalWidth ||
          mapImageDimensions.value.height !== mapImageDimensions.value.naturalHeight)) {
-        const scaleX = mapImageDimensions.value.naturalWidth / mapImageDimensions.value.width;
-        const scaleY = mapImageDimensions.value.naturalHeight / mapImageDimensions.value.height;
-        actualX = clickX_on_displayed_image * scaleX;
-        actualY = clickY_on_displayed_image * scaleY;
+
+        const scaleToNaturalX = mapImageDimensions.value.naturalWidth / mapImageDimensions.value.width;
+        const scaleToNaturalY = mapImageDimensions.value.naturalHeight / mapImageDimensions.value.height;
+        actualX = clickX_on_displayed_image * scaleToNaturalX;
+        actualY = clickY_on_displayed_image * scaleToNaturalY;
     }
-    newPlotPreviewCoords.value = { x: clickX_on_displayed_image, y: clickY_on_displayed_image };
+
     newPlotFormData.coord_x = Math.round(actualX);
     newPlotFormData.coord_y = Math.round(actualY);
     newPlotFormData.map_id = selectedMapId.value;
@@ -231,36 +255,35 @@ const cancelEditPlot = () => { /* ... same ... */
 // Lifecycle Hooks
 onMounted(() => {
     fetchCities();
-    // Initial setup of ResizeObserver for the map image
-    if (mapImageRef.value) {
-        resizeObserver = new ResizeObserver(updateDisplayDimensions);
-        resizeObserver.observe(mapImageRef.value);
-    }
+    // Initial setup of ResizeObserver
+    // Check if mapImageRef.value is available before observing.
+    // The watch on selectedMapImageUrl will handle observing when image is loaded.
 });
 
 onBeforeUnmount(() => {
-    if (resizeObserver && mapImageRef.value) {
-        resizeObserver.unobserve(mapImageRef.value);
-    }
     if (resizeObserver) {
+        if (mapImageRef.value) { // Check if element still exists
+            resizeObserver.unobserve(mapImageRef.value);
+        }
         resizeObserver.disconnect();
     }
 });
 
 watch(selectedMapImageUrl, (newUrl) => {
-    nextTick(() => { // Ensure image element is in DOM and potentially re-rendered
+    nextTick(() => {
         if (mapImageRef.value) {
             if (resizeObserver) {
-                resizeObserver.disconnect(); // Stop observing old, if any, or ensure clean start
+                resizeObserver.disconnect();
             }
             resizeObserver = new ResizeObserver(updateDisplayDimensions);
             resizeObserver.observe(mapImageRef.value);
-            // updateDisplayDimensions(); // Initial call after image src changes and element is there
-        } else if (resizeObserver) { // No image element, disconnect observer
+            // Initial dimension update might be needed if @load doesn't fire reliably after src change
+            // or if image is cached. However, onMapImageLoad should handle this.
+        } else if (resizeObserver) {
             resizeObserver.disconnect();
         }
     });
-}, { flush: 'post' }); // flush: 'post' to ensure DOM updates before watch callback
+}, { flush: 'post' });
 
 </script>
 
@@ -274,7 +297,7 @@ watch(selectedMapImageUrl, (newUrl) => {
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <!-- City Selector -->
+                    <!-- City and Map Selectors (same as before) -->
                     <div class="mb-4">
                         <label for="city_selector_plot_editor" class="block text-sm font-medium text-gray-700">Select City:</label>
                         <select id="city_selector_plot_editor" v-model="selectedCityId" @change="fetchMapsForCity"
@@ -284,8 +307,6 @@ watch(selectedMapImageUrl, (newUrl) => {
                             <option v-for="city in cities" :key="city.id" :value="city.id">{{ city.name }}</option>
                         </select>
                     </div>
-
-                    <!-- Map Selector -->
                     <div class="mb-4" v-if="selectedCityId || isLoadingMaps">
                         <label for="map_selector_plot_editor" class="block text-sm font-medium text-gray-700">Select Map:</label>
                         <select id="map_selector_plot_editor" v-model="selectedMapId" @change="fetchMapDetailsAndPlots"
@@ -298,7 +319,6 @@ watch(selectedMapImageUrl, (newUrl) => {
                      <div v-if="selectedCityId && !isLoadingMaps && mapsForCity.length === 0" class="text-gray-500 text-sm mb-4">
                         No maps found for the selected city.
                     </div>
-
                     <div class="my-4" v-if="selectedMapId">
                         <button @click="toggleAddMode"
                                 class="px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2"
@@ -308,23 +328,26 @@ watch(selectedMapImageUrl, (newUrl) => {
                         </button>
                     </div>
 
+                    <!-- Map Viewer -->
                     <div class="map-viewer-container mt-6" v-if="selectedMapImageUrl">
                         <h3 class="text-lg font-medium text-gray-900 mb-2">Map: {{ mapsForCity.find(m => m.id === selectedMapId)?.name }}</h3>
-                        <div class="map-image-container relative border border-gray-400 bg-gray-100"
-                             ref="mapImageContainerRef"
-                             @click="handleMapClick"
+                         <!-- mapDisplayRef is the positioning context for plots -->
+                        <div ref="mapDisplayRef"
+                             class="relative inline-block border border-gray-300" <!-- inline-block to shrink-wrap -->
                              :style="{
-                                width: mapImageDimensions.naturalWidth ? (mapImageDimensions.width + 'px') : 'auto', // Use display width from observer
-                                height: mapImageDimensions.naturalHeight ? (mapImageDimensions.height + 'px') : 'auto', // Use display height
-                                cursor: addModeActive ? 'crosshair' : 'default',
-                                overflow: 'hidden'
-                             }">
+                                 width: mapImageDimensions.width ? mapImageDimensions.width + 'px' : 'auto',
+                                 height: mapImageDimensions.height ? mapImageDimensions.height + 'px' : 'auto',
+                                 cursor: addModeActive ? 'crosshair' : 'default'
+                             }"
+                             @click="handleMapClick"
+                             >
                             <img
                                 ref="mapImageRef"
                                 :src="selectedMapImageUrl"
                                 alt="Selected Map"
                                 @load="onMapImageLoad"
-                                class="block w-full h-auto object-contain max-h-[70vh]"
+                                class="block w-full h-auto object-contain" <!-- Responsive image -->
+                                :style="{ 'max-height': '70vh' }"
                             />
 
                             <div v-for="plot in mapPlots" :key="plot.id"
@@ -336,8 +359,8 @@ watch(selectedMapImageUrl, (newUrl) => {
                             </div>
 
                             <div v-if="addModeActive && newPlotPreviewCoords.x !== null"
-                                 class="new-plot-preview-marker absolute w-2.5 h-2.5 bg-green-500 border-white border rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none shadow-md"
-                                 :style="{ left: newPlotPreviewCoords.x + 'px', top: newPlotPreviewCoords.y + 'px' }">
+                                 class="new-plot-preview-marker absolute border-2 border-green-300 bg-green-500 bg-opacity-50 pointer-events-none"
+                                 :style="getNewPlotPreviewStyle()">
                             </div>
                         </div>
                          <div v-if="isLoadingMapPlots" class="text-center py-4 text-gray-500">Loading map plots...</div>
@@ -349,9 +372,9 @@ watch(selectedMapImageUrl, (newUrl) => {
             </div>
         </div>
 
-        <!-- Modals (Add and Edit) -->
+        <!-- Modals (Add and Edit) - Kept outside main layout flow for z-index -->
         <div v-if="showAddPlotModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-            <!-- ... Add Plot Modal content ... -->
+            <!-- ... Add Plot Modal content (same as before) ... -->
              <div class="modal-content bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
                 <h3 class="text-xl font-semibold mb-5">Add New Map Plot</h3>
                 <form @submit.prevent="submitNewPlot" class="space-y-4">
@@ -394,7 +417,7 @@ watch(selectedMapImageUrl, (newUrl) => {
         </div>
 
          <div v-if="showEditPlotModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-            <!-- ... Edit Plot Modal content ... -->
+            <!-- ... Edit Plot Modal content (same as before) ... -->
             <div class="modal-content bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
                 <h3 class="text-xl font-semibold mb-5">Edit Map Plot: {{ editPlotFormData.plot_identifier }}</h3>
                 <form @submit.prevent="submitEditPlot" class="space-y-4">
