@@ -52,6 +52,22 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     Tipos de Edificio
                                 </NavLink>
+                                <!-- ADD NEW LINKS BELOW -->
+                                <NavLink :href="route('admin.maps.index')" :active="route().current().startsWith('admin.maps')">
+                                    Mapas
+                                </NavLink>
+                                <NavLink :href="route('admin.owners.index')" :active="route().current().startsWith('admin.owners')">
+                                    Propietarios
+                                </NavLink>
+                                <NavLink :href="route('admin.map-plot-editor.index')" :active="route().current().startsWith('admin.map-plot-editor')">
+                                    Editor de Lotes
+                                </NavLink>
+                                <NavLink :href="route('admin.shop-requests.index')" :active="route().current().startsWith('admin.shop-requests')">
+                                    Solicitudes
+                                </NavLink>
+                                <NavLink :href="route('admin.shop-contracts.index')" :active="route().current().startsWith('admin.shop-contracts')">
+                                    Contratos
+                                </NavLink>
                             </div>
                         </div>
 
@@ -171,6 +187,22 @@ const showingNavigationDropdown = ref(false);
                             :active="route().current().startsWith('admin.building-types')"
                         >
                             Tipos de Edificio
+                        </ResponsiveNavLink>
+                        <!-- ADD NEW LINKS BELOW -->
+                        <ResponsiveNavLink :href="route('admin.maps.index')" :active="route().current().startsWith('admin.maps')">
+                            Mapas
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('admin.owners.index')" :active="route().current().startsWith('admin.owners')">
+                            Propietarios
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('admin.map-plot-editor.index')" :active="route().current().startsWith('admin.map-plot-editor')">
+                            Editor de Lotes
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('admin.shop-requests.index')" :active="route().current().startsWith('admin.shop-requests')">
+                            Solicitudes
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('admin.shop-contracts.index')" :active="route().current().startsWith('admin.shop-contracts')">
+                            Contratos
                         </ResponsiveNavLink>
                     </div>
 

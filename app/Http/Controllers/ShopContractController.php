@@ -85,23 +85,6 @@ class ShopContractController extends Controller
         $data = $request->validated();
         $data['last_updated_by'] = Auth::id();
 
-        // TODO: Add custom validation here for map_plot_id to ensure no active contract
-        // exists for the selected dates if not handled by a complex unique rule.
-        // Example:
-        // $existingContract = ShopContract::where('map_plot_id', $data['map_plot_id'])
-        //                                ->whereIn('status', ['active', 'pending_renewal'])
-        //                                ->where(function($query) use ($data) {
-        //                                     $query->whereBetween('start_date', [$data['start_date'], $data['end_date']])
-        //                                           ->orWhereBetween('end_date', [$data['start_date'], $data['end_date']])
-        //                                           ->orWhere(function($q) use ($data){
-        //                                               $q->where('start_date', '<=', $data['start_date'])
-        //                                                 ->where('end_date', '>=', $data['end_date']);
-        //                                           });
-        //                                })->exists();
-        // if ($existingContract) {
-        //     return back()->withErrors(['map_plot_id' => 'This map plot is already under an active contract for the selected period.'])->withInput();
-        // }
-
         $shopContract = ShopContract::create($data);
 
         if (!empty($data['shop_request_id'])) {
@@ -168,10 +151,6 @@ class ShopContractController extends Controller
         $this->authorize('update', $shopContract);
         $data = $request->validated();
         $data['last_updated_by'] = Auth::id();
-
-        // TODO: Similar to store, add custom validation for map_plot_id if it's being changed,
-        // to ensure no active contract exists for the new plot/dates.
-        // This needs to exclude the current $shopContract itself from the check.
 
         $shopContract->update($data);
 
