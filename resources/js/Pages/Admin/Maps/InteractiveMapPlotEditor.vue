@@ -240,9 +240,13 @@ const confirmDeletePlot = () => { /* ... same ... */
     if (!editingPlot.value || !confirm('Are you sure you want to delete this plot?')) return;
     deletePlot();
 };
-const deletePlot = () => { /* ... same ... */
+const deletePlot = () => {
     if (!editingPlot.value) return;
-    editPlotFormData.delete(route('admin.map-plots.destroy', editingPlot.value.id), {
+
+    const deleteUrl = route('admin.map-plots.destroy', editingPlot.value.id);
+    console.log('Generated DELETE URL:', deleteUrl); // Debugging line
+
+    editPlotFormData.delete(deleteUrl, { // Use the variable here
         preserveScroll: true,
         onSuccess: () => { fetchMapDetailsAndPlots(); cancelEditPlot(); },
         onError: (errors) => { console.error('Error deleting plot:', errors); alert('Could not delete plot.'); }
