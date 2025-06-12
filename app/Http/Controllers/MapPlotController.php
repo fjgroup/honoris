@@ -54,16 +54,16 @@ class MapPlotController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreMapPlotRequest $request): JsonResponse
+    public function store(StoreMapPlotRequest $request): RedirectResponse
     {
         $this->authorize('create', MapPlot::class);
         $data = $request->validated();
         // Ensure 'is_active' defaults to true if not provided or if it's not boolean from form
         $data['is_active'] = filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN);
 
-        $mapPlot = MapPlot::create($data);
-        $mapPlot->load('map:id,name'); // Load map for context in response
-        return response()->json($mapPlot, 201);
+        MapPlot::create($data);
+        // $mapPlot->load('map:id,name'); // Not needed for redirect back
+        return redirect()->back()->with('success', 'Map plot created successfully.');
     }
 
     /**
@@ -91,7 +91,7 @@ class MapPlotController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateMapPlotRequest $request, MapPlot $mapPlot): JsonResponse
+    public function update(UpdateMapPlotRequest $request, MapPlot $mapPlot): RedirectResponse
     {
         $this->authorize('update', $mapPlot);
         $data = $request->validated();
@@ -101,17 +101,17 @@ class MapPlotController extends Controller
         }
 
         $mapPlot->update($data);
-        $mapPlot->load('map:id,name'); // Load map for context in response
-        return response()->json($mapPlot);
+        // $mapPlot->load('map:id,name'); // Not needed for redirect back
+        return redirect()->back()->with('success', 'Map plot updated successfully.');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(MapPlot $mapPlot): JsonResponse
+    public function destroy(MapPlot $mapPlot): RedirectResponse
     {
         $this->authorize('delete', $mapPlot);
         $mapPlot->delete();
-        return response()->json(null, 204);
+        return redirect()->back()->with('success', 'Map plot deleted successfully.');
     }
 }
