@@ -334,9 +334,8 @@ watch(selectedMapImageUrl, (newUrl) => {
                          <!-- mapDisplayRef is the positioning context for plots -->
                         <!-- inline-block to shrink-wrap -->
                         <div ref="mapDisplayRef"
-                             class="relative inline-block border border-gray-300"
+                             class="relative block w-full border border-gray-300"
                              :style="{
-                                 width: mapImageDimensions.width ? mapImageDimensions.width + 'px' : 'auto',
                                  height: mapImageDimensions.height ? mapImageDimensions.height + 'px' : 'auto',
                                  cursor: addModeActive ? 'crosshair' : 'default'
                              }"
@@ -348,7 +347,6 @@ watch(selectedMapImageUrl, (newUrl) => {
                                 alt="Selected Map"
                                 @load="onMapImageLoad"
                                 class="block w-full h-auto object-contain"
-                                :style="{ 'max-height': '70vh' }"
                             />
 
                             <div v-for="plot in mapPlots" :key="plot.id"
