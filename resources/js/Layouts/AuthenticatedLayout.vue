@@ -81,7 +81,7 @@ const showingNavigationDropdown = ref(false);
                                                 type="button"
                                                 class="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
                                             >
-                                                {{ $page.props.auth.user.name }}
+                                                {{ ($page.props.auth && $page.props.auth.user) ? $page.props.auth.user.name : 'User' }}
 
                                                 <svg
                                                     class="-me-0.5 ms-2 h-4 w-4"
@@ -211,13 +211,15 @@ const showingNavigationDropdown = ref(false);
                         class="border-t border-gray-200 pb-1 pt-4"
                     >
                         <div class="px-4">
-                            <div
-                                class="text-base font-medium text-gray-800"
-                            >
+                            <div v-if="$page.props.auth && $page.props.auth.user" class="text-base font-medium text-gray-800">
                                 {{ $page.props.auth.user.name }}
                             </div>
-                            <div class="text-sm font-medium text-gray-500">
+                            <div v-if="$page.props.auth && $page.props.auth.user" class="text-sm font-medium text-gray-500">
                                 {{ $page.props.auth.user.email }}
+                            </div>
+                            <div v-if="!$page.props.auth || !$page.props.auth.user">
+                                <div class="text-base font-medium text-gray-800">User Name N/A</div>
+                                <div class="text-sm font-medium text-gray-500">Email N/A</div>
                             </div>
                         </div>
 
