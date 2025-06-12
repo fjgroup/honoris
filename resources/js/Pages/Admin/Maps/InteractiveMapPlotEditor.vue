@@ -16,6 +16,7 @@ const cities = ref([]);
 const selectedCityId = ref(null);
 const mapsForCity = ref([]);
 const selectedMapId = ref(null);
+const selectedMap = ref(null); // Added to store full map details
 const selectedMapImageUrl = ref(null); // Will store the URL for the map image
 const mapPlots = ref([]);
 
@@ -82,17 +83,24 @@ const fetchMapDetailsAndPlots = async () => {
         return;
     }
     isLoadingMapDetails.value = true; isLoadingMapPlots.value = true;
-    selectedMapImageUrl.value = null; mapPlots.value = [];
+    selectedMapImageUrl.value = null; mapPlots.value = []; selectedMap.value = null;
+    mapImageNaturalDimensions.value = { width: 0, height: 0 }; // Reset dimensions
+    mapDisplayDimensions.value = { width: 0, height: 0 }; // Reset dimensions
+
     try {
-        // Assuming MapController@show returns JSON with image_path
-        const mapDetailsResponse = await axios.get(route('admin.maps.show', selectedMapId.value));
+        const mapDetailsResponse = await axios.get(route('admin.maps.details.api', selectedMapId.value));
+        selectedMap.value = mapDetailsResponse.data; // Store full map object
         selectedMapImageUrl.value = mapDetailsResponse.data.image_path;
+        // If map model includes natural width/height, they can be used here, e.g.,
+        // mapImageNaturalDimensions.value = { width: mapDetailsResponse.data.width, height: mapDetailsResponse.data.height };
+        // This would be better than relying solely on @load if dimensions are pre-stored.
 
         const plotsResponse = await axios.get(route('admin.map-plots.index', { map_id: selectedMapId.value }));
         mapPlots.value = plotsResponse.data.map_plots.data;
     } catch (error) {
         console.error("Error fetching map details or plots:", error);
         selectedMapImageUrl.value = null;
+        selectedMap.value = null;
     } finally {
         isLoadingMapDetails.value = false; isLoadingMapPlots.value = false;
     }
