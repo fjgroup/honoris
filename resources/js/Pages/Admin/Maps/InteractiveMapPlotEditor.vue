@@ -1,7 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
-import { Inertia } from '@inertiajs/inertia';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import axios from 'axios';
 
@@ -245,20 +244,18 @@ const deletePlot = () => {
     if (!editingPlot.value) return;
 
     const deleteUrl = route('admin.map-plots.destroy', editingPlot.value.id);
-    console.log('Generated DELETE URL for Inertia.delete:', deleteUrl);
+    console.log('Generated DELETE URL for router.delete:', deleteUrl); // Updated log message
 
-    Inertia.delete(deleteUrl, {
+    router.delete(deleteUrl, { // Changed to router.delete
         preserveScroll: true,
         onSuccess: () => {
             fetchMapDetailsAndPlots();
-            cancelEditPlot(); // This should ideally hide the modal and reset the form
+            cancelEditPlot();
         },
         onError: (errors) => {
-            console.error('Error deleting plot via Inertia.delete:', errors);
-            // Consider a more user-friendly error message or handling
+            console.error('Error deleting plot via router.delete:', errors);
             alert('Could not delete plot. Check console for details.');
         },
-        // onFinish can be added if needed
     });
 };
 const cancelEditPlot = () => { /* ... same ... */
