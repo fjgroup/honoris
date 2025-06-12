@@ -332,8 +332,9 @@ watch(selectedMapImageUrl, (newUrl) => {
                     <div class="map-viewer-container mt-6" v-if="selectedMapImageUrl">
                         <h3 class="text-lg font-medium text-gray-900 mb-2">Map: {{ mapsForCity.find(m => m.id === selectedMapId)?.name }}</h3>
                          <!-- mapDisplayRef is the positioning context for plots -->
+                        <!-- inline-block to shrink-wrap -->
                         <div ref="mapDisplayRef"
-                             class="relative inline-block border border-gray-300" <!-- inline-block to shrink-wrap -->
+                             class="relative inline-block border border-gray-300"
                              :style="{
                                  width: mapImageDimensions.width ? mapImageDimensions.width + 'px' : 'auto',
                                  height: mapImageDimensions.height ? mapImageDimensions.height + 'px' : 'auto',
