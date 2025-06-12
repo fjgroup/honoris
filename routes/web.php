@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('map-plots', MapPlotController::class);
         Route::get('/map-plot-editor', function () { return Inertia::render('Admin/Maps/InteractiveMapPlotEditor'); })->name('map-plot-editor.index');
         Route::resource('shop-contracts', ShopContractController::class); // Added to admin group
+        Route::resource('users', \App\Http\Controllers\Admin\UserController::class)->only(['index', 'create', 'store']);
         // Future admin routes can be added here
     });
 

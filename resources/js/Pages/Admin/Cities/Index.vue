@@ -55,16 +55,27 @@ defineProps({
                                 </tr>
                             </tbody>
                         </table>
-                        <!-- Basic Pagination Links (customize as needed) -->
-                        <div class="mt-4" v-if="cities.links.length > 3">
-                            <Link v-for="(link, key) in cities.links"
-                                  :key="key"
-                                  :href="link.url"
-                                  v-html="link.label"
-                                  class="px-3 py-2 mx-1 text-sm rounded-md"
-                                  :class="{ 'bg-blue-500 text-white': link.active, 'text-gray-700 hover:bg-gray-200': !link.active && link.url }"
-                                  :disabled="!link.url"
-                                  preserve-scroll />
+                        <!-- Pagination Links -->
+                        <div class="mt-6 flex justify-center space-x-1" v-if="cities.links && cities.links.length > 3">
+                             <template v-for="(link, key) in cities.links" :key="key">
+                                <Link
+                                    v-if="link.url"
+                                    :href="link.url"
+                                    v-html="link.label"
+                                    class="px-4 py-2 text-sm rounded-md"
+                                    :class="{
+                                        'bg-indigo-600 text-white': link.active,
+                                        'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50': !link.active,
+                                    }"
+                                    preserve-scroll
+                                />
+                                <span
+                                    v-else
+                                    v-html="link.label"
+                                    class="px-4 py-2 text-sm rounded-md text-gray-400 cursor-default border border-gray-300"
+                                    :class="{ 'bg-indigo-600 text-white': link.active }"
+                                ></span>
+                            </template>
                         </div>
                     </div>
                 </div>

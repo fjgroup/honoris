@@ -68,6 +68,9 @@ const showingNavigationDropdown = ref(false);
                                 <NavLink :href="route('admin.shop-contracts.index')" :active="route().current().startsWith('admin.shop-contracts')">
                                     Contratos
                                 </NavLink>
+                                <NavLink :href="route('admin.users.index')" :active="route().current().startsWith('admin.users')">
+                                    Manage Users
+                                </NavLink>
                             </div>
                         </div>
 
@@ -203,6 +206,9 @@ const showingNavigationDropdown = ref(false);
                         </ResponsiveNavLink>
                         <ResponsiveNavLink :href="route('admin.shop-contracts.index')" :active="route().current().startsWith('admin.shop-contracts')">
                             Contratos
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('admin.users.index')" :active="route().current().startsWith('admin.users')">
+                            Manage Users
                         </ResponsiveNavLink>
                     </div>
 
