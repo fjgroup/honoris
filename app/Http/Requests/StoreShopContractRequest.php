@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Rules\PreventPlotDateOverlap; // Import the custom rule
 
 class StoreShopContractRequest extends FormRequest
 {
@@ -26,7 +27,21 @@ class StoreShopContractRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'map_plot_id' => 'required|exists:map_plots,id', // Simpler rule for now
+            'map_plot_id' => [
+                'required',
+                'exists:map_plots,id',
+                function ($attribute, $value, $fail) {
+                    $startDate = $this->input('start_date');
+                    $endDate = $this->input('end_date');
+                    // Only apply the rule if dates are present and potentially valid (basic format)
+                    if ($startDate && $endDate) {
+                        $rule = new PreventPlotDateOverlap($value, $startDate, $endDate);
+                        if (!$rule->passes($attribute, $value)) {
+                            $fail($rule->message());
+                        }
+                    }
+                }
+            ],
             'owner_id' => 'required|exists:owners,id',
             'building_type_id' => 'required|exists:building_types,id',
             'assigned_to_user_id' => 'nullable|exists:users,id',
