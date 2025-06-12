@@ -43,10 +43,10 @@ defineProps({
                         </div>
                         <div v-if="map.image_path">
                             <strong class="font-semibold text-gray-700">Image Preview:</strong><br/>
-                            <img :src="map.image_path.startsWith('http') ? map.image_path : ('/storage/' + map.image_path.replace(/^public\//, ''))"
+                            <img :src="map.image_path"
                                  :alt="map.name"
                                  class="mt-2 max-w-md w-full max-h-[60vh] border p-1 rounded-md object-contain"/>
-                            <p class="text-xs text-gray-500 mt-1">Note: Image preview assumes path is correctly stored for public access (e.g., via `storage:link`). If using `Storage::url()`, the `image_path` prop should already be a full URL.</p>
+                            <p class="text-xs text-gray-500 mt-1">Note: Image path is: {{ map.image_path }}. Ensure it's a public URL (e.g., starts with /storage/ or http).</p>
                         </div>
                          <div>
                             <strong class="font-semibold text-gray-700">Natural Width (px):</strong>
