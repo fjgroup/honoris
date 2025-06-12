@@ -62,7 +62,7 @@ const showingNavigationDropdown = ref(false);
                                 <NavLink :href="route('admin.map-plot-editor.index')" :active="route().current().startsWith('admin.map-plot-editor')">
                                     Editor de Lotes
                                 </NavLink>
-                                <NavLink :href="route('admin.shop-requests.index')" :active="route().current().startsWith('admin.shop-requests')">
+                                <NavLink :href="route('shop-requests.index')" :active="route().current().startsWith('shop-requests.') || route().current() === 'shop-requests.index'">
                                     Solicitudes
                                 </NavLink>
                                 <NavLink :href="route('admin.shop-contracts.index')" :active="route().current().startsWith('admin.shop-contracts')">
@@ -198,7 +198,7 @@ const showingNavigationDropdown = ref(false);
                         <ResponsiveNavLink :href="route('admin.map-plot-editor.index')" :active="route().current().startsWith('admin.map-plot-editor')">
                             Editor de Lotes
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('admin.shop-requests.index')" :active="route().current().startsWith('admin.shop-requests')">
+                        <ResponsiveNavLink :href="route('shop-requests.index')" :active="route().current().startsWith('shop-requests.') || route().current() === 'shop-requests.index'">
                             Solicitudes
                         </ResponsiveNavLink>
                         <ResponsiveNavLink :href="route('admin.shop-contracts.index')" :active="route().current().startsWith('admin.shop-contracts')">
