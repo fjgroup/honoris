@@ -346,7 +346,7 @@ watch(selectedMapImageUrl, (newUrl) => {
                                 :src="selectedMapImageUrl"
                                 alt="Selected Map"
                                 @load="onMapImageLoad"
-                                class="block w-full h-auto object-contain" <!-- Responsive image -->
+                                class="block w-full h-auto object-contain"
                                 :style="{ 'max-height': '70vh' }"
                             />
 
