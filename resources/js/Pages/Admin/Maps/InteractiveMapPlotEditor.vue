@@ -84,8 +84,8 @@ const fetchMapDetailsAndPlots = async () => {
     }
     isLoadingMapDetails.value = true; isLoadingMapPlots.value = true;
     selectedMapImageUrl.value = null; mapPlots.value = []; selectedMap.value = null;
-    mapImageNaturalDimensions.value = { width: 0, height: 0 }; // Reset dimensions
-    mapDisplayDimensions.value = { width: 0, height: 0 }; // Reset dimensions
+    // Reset all properties of the single mapImageDimensions ref
+    mapImageDimensions.value = { width: 0, height: 0, naturalWidth: 0, naturalHeight: 0 };
 
     try {
         const mapDetailsResponse = await axios.get(route('admin.maps.details.api', selectedMapId.value));
