@@ -63,6 +63,7 @@ class MapPlotController extends Controller
 
         MapPlot::create($data);
         // $mapPlot->load('map:id,name'); // Not needed for redirect back
+        // redirect()->back() es ideal para Inertia.
         return redirect()->back()->with('success', 'Map plot created successfully.');
     }
 
@@ -101,8 +102,9 @@ class MapPlotController extends Controller
         }
 
         $mapPlot->update($data);
-        // $mapPlot->load('map:id,name'); // Not needed for redirect back
-        return redirect()->back()->with('success', 'Map plot updated successfully.');
+
+        // Simplemente redirige hacia atrás. Inertia se encargará del resto.
+        return Redirect::back()->with('success', 'Map plot updated successfully.');
     }
 
     /**
@@ -112,6 +114,8 @@ class MapPlotController extends Controller
     {
         $this->authorize('delete', $mapPlot);
         $mapPlot->delete();
-        return redirect()->back()->with('success', 'Map plot deleted successfully.');
+
+        // Simplemente redirige hacia atrás.
+        return Redirect::back()->with('success', 'Map plot deleted successfully.');
     }
 }

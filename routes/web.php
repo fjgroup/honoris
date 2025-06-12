@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\MapPlotEditorController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -40,6 +41,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('owners', OwnerController::class);
         Route::resource('map-plots', MapPlotController::class);
         Route::get('/map-plot-editor', function () { return Inertia::render('Admin/Maps/InteractiveMapPlotEditor'); })->name('map-plot-editor.index');
+        Route::get('/map-plot-editor', [MapPlotEditorController::class, 'index'])->name('map-plot-editor.index');
         Route::resource('shop-contracts', ShopContractController::class); // Added to admin group
         Route::resource('users', \App\Http\Controllers\Admin\UserController::class)->only(['index', 'create', 'store']);
         Route::get('/maps/{map}/details', [MapController::class, 'getMapDetailsApi'])->name('maps.details.api'); // Added
