@@ -127,4 +127,22 @@ class MapController extends Controller
         $map->delete();
         return Redirect::route('admin.maps.index')->with('success', 'Map deleted.');
     }
+
+    /**
+     * API endpoint to get map details as JSON.
+     */
+    public function getMapDetailsApi(Map $map): JsonResponse
+    {
+        // Policy check could be added here if more granular control than route middleware is needed.
+        // e.g., $this->authorize('view', $map);
+
+        // Ensure necessary relationships are loaded, and only select fields needed by the editor.
+        $map->load('city:id,name');
+
+        // Return the map model. Laravel will automatically convert it to JSON.
+        // The model's $appends for image_path (if it uses an accessor to build full URL)
+        // should ensure the image_path is correctly formatted.
+        // If natural width/height are needed and stored on map model, they will be included.
+        return response()->json($map);
+    }
 }
