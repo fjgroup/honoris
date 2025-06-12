@@ -1,23 +1,16 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'; // Added import
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'; // Added onBeforeUnmount, watch, nextTick
 import axios from 'axios';
-// Assuming these components exist or are part of a global setup
-// import InputLabel from '@/Components/InputLabel.vue';
-// import PrimaryButton from '@/Components/PrimaryButton.vue';
-// import TextInput from '@/Components/TextInput.vue';
-// import TextareaInput from '@/Components/TextareaInput.vue';
-// import Checkbox from '@/Components/Checkbox.vue';
-// import InputError from '@/Components/InputError.vue';
 
 // --- Reactive State ---
 const cities = ref([]);
 const selectedCityId = ref(null);
 const mapsForCity = ref([]);
 const selectedMapId = ref(null);
-const selectedMap = ref(null); // Added to store full map details
-const selectedMapImageUrl = ref(null); // Will store the URL for the map image
+const selectedMap = ref(null);
+const selectedMapImageUrl = ref(null);
 const mapPlots = ref([]);
 
 const isLoadingCities = ref(false);
@@ -25,8 +18,11 @@ const isLoadingMaps = ref(false);
 const isLoadingMapDetails = ref(false);
 const isLoadingMapPlots = ref(false);
 
+// mapImageDimensions now stores both natural and display sizes.
+// width/height will be display size, naturalWidth/naturalHeight will be image's original size.
 const mapImageDimensions = ref({ width: 0, height: 0, naturalWidth: 0, naturalHeight: 0 });
-const mapImageContainerRef = ref(null); // Ref for the map image container div
+const mapImageContainerRef = ref(null);
+const mapImageRef = ref(null); // Ref for the <img> element itself
 
 // Add Plot Mode State
 const addModeActive = ref(false);
@@ -45,8 +41,19 @@ const editPlotFormData = useForm({
     width: 0, height: 0, notes: '', is_active: true,
 });
 
+let resizeObserver = null;
 
 // --- Methods ---
+const updateDisplayDimensions = () => {
+    if (mapImageRef.value) {
+        mapImageDimensions.value = {
+            ...mapImageDimensions.value, // Keep naturalWidth/Height
+            width: mapImageRef.value.offsetWidth,
+            height: mapImageRef.value.offsetHeight,
+        };
+    }
+};
+
 const fetchCities = async () => {
     isLoadingCities.value = true;
     try {
@@ -61,11 +68,11 @@ const fetchCities = async () => {
 
 const fetchMapsForCity = async () => {
     if (!selectedCityId.value || selectedCityId.value === 'null') {
-        mapsForCity.value = []; selectedMapId.value = null; selectedMapImageUrl.value = null; mapPlots.value = [];
+        mapsForCity.value = []; selectedMapId.value = null; selectedMap.value = null; selectedMapImageUrl.value = null; mapPlots.value = [];
         return;
     }
     isLoadingMaps.value = true;
-    mapsForCity.value = []; selectedMapId.value = null; selectedMapImageUrl.value = null; mapPlots.value = [];
+    mapsForCity.value = []; selectedMapId.value = null; selectedMap.value = null; selectedMapImageUrl.value = null; mapPlots.value = [];
     try {
         const response = await axios.get(route('admin.maps.index', { city_id: selectedCityId.value }));
         mapsForCity.value = response.data;
@@ -78,29 +85,30 @@ const fetchMapsForCity = async () => {
 
 const fetchMapDetailsAndPlots = async () => {
     if (!selectedMapId.value || selectedMapId.value === 'null') {
-        selectedMapImageUrl.value = null; mapPlots.value = [];
+        selectedMap.value = null; selectedMapImageUrl.value = null; mapPlots.value = [];
         mapImageDimensions.value = { width: 0, height: 0, naturalWidth: 0, naturalHeight: 0 };
         return;
     }
     isLoadingMapDetails.value = true; isLoadingMapPlots.value = true;
-    selectedMapImageUrl.value = null; mapPlots.value = []; selectedMap.value = null;
-    // Reset all properties of the single mapImageDimensions ref
+    selectedMap.value = null; selectedMapImageUrl.value = null; mapPlots.value = [];
     mapImageDimensions.value = { width: 0, height: 0, naturalWidth: 0, naturalHeight: 0 };
 
     try {
         const mapDetailsResponse = await axios.get(route('admin.maps.details.api', selectedMapId.value));
-        selectedMap.value = mapDetailsResponse.data; // Store full map object
+        selectedMap.value = mapDetailsResponse.data;
         selectedMapImageUrl.value = mapDetailsResponse.data.image_path;
-        // If map model includes natural width/height, they can be used here, e.g.,
-        // mapImageNaturalDimensions.value = { width: mapDetailsResponse.data.width, height: mapDetailsResponse.data.height };
-        // This would be better than relying solely on @load if dimensions are pre-stored.
+        // Natural dimensions might come from mapDetailsResponse.data if stored, otherwise from @load
+        if (mapDetailsResponse.data.width && mapDetailsResponse.data.height) {
+             mapImageDimensions.value.naturalWidth = mapDetailsResponse.data.width;
+             mapImageDimensions.value.naturalHeight = mapDetailsResponse.data.height;
+        }
+
 
         const plotsResponse = await axios.get(route('admin.map-plots.index', { map_id: selectedMapId.value }));
         mapPlots.value = plotsResponse.data.map_plots.data;
     } catch (error) {
         console.error("Error fetching map details or plots:", error);
-        selectedMapImageUrl.value = null;
-        selectedMap.value = null;
+        selectedMap.value = null; selectedMapImageUrl.value = null;
     } finally {
         isLoadingMapDetails.value = false; isLoadingMapPlots.value = false;
     }
@@ -108,10 +116,11 @@ const fetchMapDetailsAndPlots = async () => {
 
 const onMapImageLoad = (event) => {
     const img = event.target;
-    mapImageDimensions.value = {
-        width: img.offsetWidth, height: img.offsetHeight,
-        naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight,
-    };
+    mapImageDimensions.value.naturalWidth = img.naturalWidth;
+    mapImageDimensions.value.naturalHeight = img.naturalHeight;
+
+    nextTick(updateDisplayDimensions); // Update display dimensions after image has loaded and rendered
+
     if(addModeActive.value) {
         newPlotPreviewCoords.value = { x: null, y: null };
     }
@@ -120,20 +129,27 @@ const onMapImageLoad = (event) => {
 const getPlotStyle = (plot) => {
     if (mapImageDimensions.value.naturalWidth > 0 && mapImageDimensions.value.naturalHeight > 0 &&
         mapImageDimensions.value.width > 0 && mapImageDimensions.value.height > 0) {
+
         const scaleX = mapImageDimensions.value.width / mapImageDimensions.value.naturalWidth;
         const scaleY = mapImageDimensions.value.height / mapImageDimensions.value.naturalHeight;
+
+        if (isNaN(scaleX) || isNaN(scaleY) || !isFinite(scaleX) || !isFinite(scaleY)) {
+            return { display: 'none' };
+        }
         return {
             left: `${plot.coord_x * scaleX}px`, top: `${plot.coord_y * scaleY}px`,
             width: `${plot.width * scaleX}px`, height: `${plot.height * scaleY}px`,
         };
     }
+    // Fallback if dimensions are not ready (e.g. display based on raw coords if no scaling info)
     return {
         left: `${plot.coord_x}px`, top: `${plot.coord_y}px`,
         width: `${plot.width}px`, height: `${plot.height}px`,
+         display: 'none', // Or hide if scaling cannot be determined yet
     };
 };
 
-const toggleAddMode = () => {
+const toggleAddMode = () => { /* ... same ... */
     addModeActive.value = !addModeActive.value;
     if (!addModeActive.value) {
         showAddPlotModal.value = false;
@@ -143,8 +159,7 @@ const toggleAddMode = () => {
         cancelEditPlot();
     }
 };
-
-const handleMapClick = (event) => {
+const handleMapClick = (event) => { /* ... same ... */
     if (!addModeActive.value || !mapImageContainerRef.value || showEditPlotModal.value) return;
     const rect = mapImageContainerRef.value.getBoundingClientRect();
     const clickX_on_displayed_image = event.clientX - rect.left;
@@ -165,35 +180,31 @@ const handleMapClick = (event) => {
     newPlotFormData.map_id = selectedMapId.value;
     showAddPlotModal.value = true;
 };
-
-const submitNewPlot = () => {
+const submitNewPlot = () => { /* ... same ... */
     newPlotFormData.post(route('admin.map-plots.store'), {
         preserveScroll: true,
         onSuccess: () => { fetchMapDetailsAndPlots(); toggleAddMode(); },
         onError: (errors) => { console.error('Error saving new plot:', errors); }
     });
 };
-
-const cancelAddPlot = () => {
+const cancelAddPlot = () => { /* ... same ... */
     showAddPlotModal.value = false; newPlotFormData.reset();
     addModeActive.value = false; newPlotPreviewCoords.value = { x: null, y: null };
 };
-
-const handleEditPlotClick = (plot) => {
+const handleEditPlotClick = (plot) => { /* ... same ... */
     if (addModeActive.value) return;
     editingPlot.value = plot;
-    editPlotFormData.defaults({ // Set defaults before reset
+    editPlotFormData.defaults({
         map_id: plot.map_id, plot_identifier: plot.plot_identifier,
         coord_x: plot.coord_x, coord_y: plot.coord_y,
         width: plot.width, height: plot.height,
         notes: plot.notes, is_active: plot.is_active,
     });
-    editPlotFormData.reset(); // Apply defaults
+    editPlotFormData.reset();
     editPlotFormData.clearErrors();
     showEditPlotModal.value = true;
 };
-
-const submitEditPlot = () => {
+const submitEditPlot = () => { /* ... same ... */
     if (!editingPlot.value) return;
     editPlotFormData.put(route('admin.map-plots.update', editingPlot.value.id), {
         preserveScroll: true,
@@ -201,13 +212,11 @@ const submitEditPlot = () => {
         onError: (errors) => { console.error('Error updating plot:', errors); }
     });
 };
-
-const confirmDeletePlot = () => {
+const confirmDeletePlot = () => { /* ... same ... */
     if (!editingPlot.value || !confirm('Are you sure you want to delete this plot?')) return;
     deletePlot();
 };
-
-const deletePlot = () => {
+const deletePlot = () => { /* ... same ... */
     if (!editingPlot.value) return;
     editPlotFormData.delete(route('admin.map-plots.destroy', editingPlot.value.id), {
         preserveScroll: true,
@@ -215,12 +224,44 @@ const deletePlot = () => {
         onError: (errors) => { console.error('Error deleting plot:', errors); alert('Could not delete plot.'); }
     });
 };
-
-const cancelEditPlot = () => {
+const cancelEditPlot = () => { /* ... same ... */
     showEditPlotModal.value = false; editingPlot.value = null; editPlotFormData.reset();
 };
 
-onMounted(() => { fetchCities(); });
+// Lifecycle Hooks
+onMounted(() => {
+    fetchCities();
+    // Initial setup of ResizeObserver for the map image
+    if (mapImageRef.value) {
+        resizeObserver = new ResizeObserver(updateDisplayDimensions);
+        resizeObserver.observe(mapImageRef.value);
+    }
+});
+
+onBeforeUnmount(() => {
+    if (resizeObserver && mapImageRef.value) {
+        resizeObserver.unobserve(mapImageRef.value);
+    }
+    if (resizeObserver) {
+        resizeObserver.disconnect();
+    }
+});
+
+watch(selectedMapImageUrl, (newUrl) => {
+    nextTick(() => { // Ensure image element is in DOM and potentially re-rendered
+        if (mapImageRef.value) {
+            if (resizeObserver) {
+                resizeObserver.disconnect(); // Stop observing old, if any, or ensure clean start
+            }
+            resizeObserver = new ResizeObserver(updateDisplayDimensions);
+            resizeObserver.observe(mapImageRef.value);
+            // updateDisplayDimensions(); // Initial call after image src changes and element is there
+        } else if (resizeObserver) { // No image element, disconnect observer
+            resizeObserver.disconnect();
+        }
+    });
+}, { flush: 'post' }); // flush: 'post' to ensure DOM updates before watch callback
+
 </script>
 
 <template>
@@ -258,8 +299,6 @@ onMounted(() => { fetchCities(); });
                         No maps found for the selected city.
                     </div>
 
-
-                    <!-- Add Plot Button -->
                     <div class="my-4" v-if="selectedMapId">
                         <button @click="toggleAddMode"
                                 class="px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2"
@@ -269,19 +308,24 @@ onMounted(() => { fetchCities(); });
                         </button>
                     </div>
 
-                    <!-- Map Viewer -->
                     <div class="map-viewer-container mt-6" v-if="selectedMapImageUrl">
                         <h3 class="text-lg font-medium text-gray-900 mb-2">Map: {{ mapsForCity.find(m => m.id === selectedMapId)?.name }}</h3>
                         <div class="map-image-container relative border border-gray-400 bg-gray-100"
                              ref="mapImageContainerRef"
                              @click="handleMapClick"
                              :style="{
-                                width: mapImageDimensions.width ? mapImageDimensions.width + 'px' : 'auto',
-                                height: mapImageDimensions.height ? mapImageDimensions.height + 'px' : 'auto',
+                                width: mapImageDimensions.naturalWidth ? (mapImageDimensions.width + 'px') : 'auto', // Use display width from observer
+                                height: mapImageDimensions.naturalHeight ? (mapImageDimensions.height + 'px') : 'auto', // Use display height
                                 cursor: addModeActive ? 'crosshair' : 'default',
-                                overflow: 'hidden' /* Ensure plots don't visually overflow if image is smaller than container */
+                                overflow: 'hidden'
                              }">
-                            <img :src="selectedMapImageUrl" alt="Selected Map" @load="onMapImageLoad" class="block max-w-full max-h-[70vh] object-contain"/>
+                            <img
+                                ref="mapImageRef"
+                                :src="selectedMapImageUrl"
+                                alt="Selected Map"
+                                @load="onMapImageLoad"
+                                class="block w-full h-auto object-contain max-h-[70vh]"
+                            />
 
                             <div v-for="plot in mapPlots" :key="plot.id"
                                  class="map-plot-existing absolute border-2 flex items-center justify-center"
@@ -305,9 +349,10 @@ onMounted(() => { fetchCities(); });
             </div>
         </div>
 
-        <!-- Add Plot Modal -->
+        <!-- Modals (Add and Edit) -->
         <div v-if="showAddPlotModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-            <div class="modal-content bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
+            <!-- ... Add Plot Modal content ... -->
+             <div class="modal-content bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
                 <h3 class="text-xl font-semibold mb-5">Add New Map Plot</h3>
                 <form @submit.prevent="submitNewPlot" class="space-y-4">
                     <div>
@@ -348,8 +393,8 @@ onMounted(() => { fetchCities(); });
             </div>
         </div>
 
-        <!-- Edit Plot Modal -->
          <div v-if="showEditPlotModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <!-- ... Edit Plot Modal content ... -->
             <div class="modal-content bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
                 <h3 class="text-xl font-semibold mb-5">Edit Map Plot: {{ editPlotFormData.plot_identifier }}</h3>
                 <form @submit.prevent="submitEditPlot" class="space-y-4">
@@ -410,11 +455,10 @@ onMounted(() => { fetchCities(); });
 <style scoped>
 .map-viewer-container img { display: block; user-select: none; }
 .map-plot-existing { cursor: pointer; }
-.map-plot-existing:hover { /* Tailwind classes used directly for hover now */ }
-.modal-overlay { /* Basic modal styling */ z-index: 50; } /* Tailwind z-50 */
-.modal-content { /* Basic modal content styling */ z-index: 51; }
+/* .map-plot-existing:hover { Tailwind classes used directly for hover now } */
+.modal-overlay { z-index: 50; }
+.modal-content { z-index: 51; }
 
-/* Standardized form element styling using @apply for brevity */
 .form-label { @apply block text-sm font-medium text-gray-700 mb-1; }
 .form-input, .form-select, .form-textarea { @apply mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2; }
 .form-checkbox { @apply rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500; }
