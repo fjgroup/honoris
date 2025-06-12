@@ -65,14 +65,13 @@ class MapController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Map $map): JsonResponse // Modified
+    public function show(Map $map): InertiaResponse // Changed from JsonResponse
     {
         $this->authorize('view', $map);
-        $map->load('city:id,name'); // Load only specific columns from city for efficiency
-        // Ensure image_path is absolute if it's stored as relative
-        // This is usually handled by an accessor in the Map model (getImagePathAttribute)
-        // or by ensuring Storage::url() was used to save it.
-        return response()->json($map);
+        $map->load('city:id,name'); // Load only necessary city fields
+        return Inertia::render('Admin/Maps/Show', [
+            'map' => $map,
+        ]);
     }
 
     /**
